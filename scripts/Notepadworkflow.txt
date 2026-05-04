@@ -1,0 +1,8 @@
+1. Click the Windows search field next to the Start button.
+2. Type "Notepad" into the search box.
+3. Press Enter to launch Notepad.
+4. Wait for Notepad to open.
+5. Type "Hello World" into the Notepad window.
+6. Click the "File" menu in Notepad.
+7. Select "Save As" and enter a filename such as "test_document.txt".
+8. Press Enter to save the file.

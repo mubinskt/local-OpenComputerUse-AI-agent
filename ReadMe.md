@@ -1,65 +1,78 @@
 # Local Desktop Automation Agent
 
-A minimal standalone Python app for single-user desktop automation.
-It captures the screen, sends the instruction to a local Ollama model, receives a JSON action plan, and executes clicks/typing/drag/scroll locally.
+A modular Python app for desktop automation using a local Ollama model.
+It captures the desktop screenshot, sends a script from `scripts/`, receives a JSON action plan, and can execute local clicks/typing/drag/scroll actions.
 
 ## What this repo contains
 
-- `main.py` — Tkinter GUI app
+- `main.py` — application entry point
+- `ui.py` — Tkinter user interface and event handling
+- `ollama_client.py` — Ollama API prompt building and request handling
+- `action_executor.py` — action parsing, validation, and execution logic
+- `script_manager.py` — workflow script discovery and loading
+- `utils.py` — screenshot capture and plan persistence
+- `config.py` — configuration and path constants
 - `requirements.txt` — Python dependencies
-- `README.md` — quickstart and usage
-- `.gitignore`
+- `scripts/` — workflow script files for automation
+- `last_actions.json` — saved action plan output
 
 ## Recommended Ollama model
 
-Use a local instruction model that is fast enough for your machine.
+Use a local instruction model that works well with your machine.
 
 - Recommended: `llama2-13b`
-- If you have a beefy machine: `llama2-70b`
-- If you need a smaller footprint: `mistral-7b`
+- For large machines: `llama2-70b`
+- For smaller footprint: `mistral-7b`
 
-Install in Ollama with:
+Install a model in Ollama with:
 
 ```bash
 ollama pull llama2-13b
 ```
 
-If you want true screenshot vision support later, choose an Ollama vision-capable model when available.
-
-You can list available local Ollama models with:
+List available local Ollama models:
 
 ```bash
 ollama list
 ```
 
-If the app reports a missing model, use one of the installed model names or pull a new one.
+If the app reports a missing model, set `OLLAMA_MODEL` to one of the installed names.
 
 ## Setup
 
-```bash
-cd local-desktop-agent
+```powershell
+cd c:\GithubAI\local-OpenComputerUse-AI-agent
 python -m venv .venv
-.venv\Scripts\activate
+.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
 
 ## Run
 
-Set the Ollama model and API URL if needed:
+Set the Ollama model and API URL if needed, then launch the app:
 
-```bash
-set OLLAMA_MODEL=llama2-13b
+```powershell
+set OLLAMA_MODEL=llava:7b
 set OLLAMA_URL=http://127.0.0.1:11434
 python main.py
 ```
 
-## How it works
+If you are using PowerShell and want the settings to persist for the session:
 
-1. Enter a natural language instruction.
-2. Capture a screenshot of your desktop.
-3. The app sends the instruction plus screenshot metadata to Ollama.
-4. Ollama returns a JSON action plan.
-5. Review the JSON and confirm before execution.
+```powershell
+$env:OLLAMA_MODEL = "llava:7b"
+$env:OLLAMA_URL = "http://127.0.0.1:11434"
+python main.py
+```
+
+## Script-driven workflow
+
+1. Add a plain text `.txt` script to the `scripts/` folder.
+2. Select the script in the app dropdown.
+3. The app previews the script content.
+4. Click `Capture Screenshot & Generate Plan`.
+5. Review the generated JSON action plan.
+6. Click `Execute Plan` to run it.
 
 ## Supported actions
 
@@ -81,15 +94,20 @@ The model should return a JSON object like:
   "actions": [
     { "action": "click", "x": 400, "y": 300, "button": "left" },
     { "action": "type", "text": "hello world" },
-    { "action": "key_combo", "keys": ["ctrl", "s"] }
+    { "action": "key_press", "keys": ["ctrl", "s"] },
+    { "action": "wait", "seconds": 1.5 }
   ]
 }
 ```
 
-A copy of the last generated action plan is saved to `last_actions.json`.
+For `key_press` or `key_combo`, the model can also provide a string like `"Ctrl+S"`.
+The app now normalizes those values into usable key lists.
+
+A copy of the latest generated action plan is saved to `last_actions.json`.
 
 ## Notes
 
 - This is a local-only app and does not depend on any backend service.
-- The prompt currently sends screenshot metadata and path; if you want full image understanding, use a vision-capable model in Ollama.
-- Confirm the action plan before execution to avoid unintended clicks.
+- The UI now loads scripts from `scripts/` instead of manual text input.
+- Confirm the action plan before executing to avoid unintended clicks.
+- Use a vision-capable Ollama model if you want better screenshot understanding.
