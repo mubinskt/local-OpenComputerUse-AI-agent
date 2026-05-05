@@ -1,6 +1,7 @@
 import json
 import sys
 import threading
+import time
 from pathlib import Path
 from typing import List
 
@@ -9,10 +10,11 @@ import tkinter as tk
 from tkinter import messagebox, scrolledtext
 
 from action_executor import execute_plan, parse_actions, validate_action
-from config import SCRIPTS_DIR, SCREENSHOT_FILE
+from config import SCRIPTS_DIR, SCREENSHOT_FILE, SCREENSHOTS_DIR
+from functional_test import run_functional_test
 from ollama_client import build_prompt, call_ollama
 from script_manager import get_script_files, load_script_text
-from utils import capture_screenshot, save_last_actions
+from utils import append_screenshot_log, capture_screenshot, save_last_actions
 
 
 def update_script_preview(script_preview_text, script_var):
@@ -33,8 +35,16 @@ def run_generation(script_text: str, output_text, screenshot_label, root):
 
         output_text.delete("1.0", tk.END)
         output_text.insert(tk.END, "Capturing screenshot...\n")
-        metadata = capture_screenshot(root)
-        screenshot_img = Image.open(SCREENSHOT_FILE)
+        timestamp = int(time.time())
+        plan_screenshot = SCREENSHOTS_DIR / f"plan_generation_{timestamp}.png"
+        metadata = capture_screenshot(root, filename=plan_screenshot)
+        append_screenshot_log({
+            "step": "plan_generation",
+            "script": script_text,
+            "screenshot": str(plan_screenshot),
+            "timestamp": timestamp,
+        })
+        screenshot_img = Image.open(plan_screenshot)
         screenshot_img.thumbnail((360, 240))
         screenshot_photo = ImageTk.PhotoImage(screenshot_img)
         screenshot_label.config(image=screenshot_photo)
@@ -76,6 +86,19 @@ def on_execute_click(output_area):
         execute_plan(output_area)
 
 
+def on_run_functional_test_click(script_var, output_area, screenshot_label, root):
+    selected_name = script_var.get()
+    if not selected_name:
+        messagebox.showwarning("Input required", "Please select a script from the scripts folder.")
+        return
+    script_path = SCRIPTS_DIR / selected_name
+    script_text = load_script_text(script_path)
+    if not script_text:
+        messagebox.showwarning("Script empty", "Selected script is empty or could not be loaded.")
+        return
+    threading.Thread(target=run_functional_test, args=(script_text, output_area, screenshot_label, root), daemon=True).start()
+
+
 def create_ui():
     root = tk.Tk()
     root.title("Local Desktop Action Agent")
@@ -104,6 +127,9 @@ def create_ui():
 
     capture_button = tk.Button(controls_frame, text="Capture Screenshot & Generate Plan", command=lambda: on_generate_click(script_var, output_area, screenshot_preview, root))
     capture_button.pack(side="left")
+
+    run_functional_button = tk.Button(controls_frame, text="Run Functional Test", command=lambda: on_run_functional_test_click(script_var, output_area, screenshot_preview, root))
+    run_functional_button.pack(side="left", padx=8)
 
     execute_button = tk.Button(controls_frame, text="Execute Plan", command=lambda: on_execute_click(output_area))
     execute_button.pack(side="left", padx=8)

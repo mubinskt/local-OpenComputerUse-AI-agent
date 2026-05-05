@@ -125,6 +125,7 @@ def call_ollama(prompt: str) -> str:
 
 
 def build_prompt(script_text: str, width: int, height: int) -> str:
+    print(f"Building prompt for {width}x{height} screenshot")
     return (
         "You are a local automation assistant. "
         "The user will provide a scripted set of desktop automation steps. "
@@ -137,9 +138,10 @@ def build_prompt(script_text: str, width: int, height: int) -> str:
         "Supported actions: click, double_click, type, key_combo, key_press, scroll, drag, wait.\n"
         "Use keys as a JSON list for key actions, for example: {\"keys\": [\"enter\"]} or {\"keys\": [\"ctrl\", \"s\"]}.\n"
         "For wait, use the field \"seconds\" or \"time\" with the duration in seconds.\n"
-        "Do not use placeholder coordinates like 100,200. Only provide numeric x/y coordinates when you can infer them from the screenshot.\n"
+        "x_coordinate and y_coordinate must be numeric values inferred from the screenshot(and relative to the - resolution: {width}x{height}) for any particular click or move events on the screen.\n"
+        "The coordinate system uses bottom-left origin: 0,0, bottom-right {width},0, top-left 0,{height}, and top-right {width},{height}. x increases to the right, y increases upwards. "
         "Output format:\n"
-        "{\n  \"actions\": [\n    {\"action\": \"click\", \"x\": 100, \"y\": 200, \"button\": \"left\"},\n"
+        "{\n  \"actions\": [\n    {\"action\": \"click\", \"x\": x_coordinate, \"y\": y_coordinate, \"button\": \"left\"},\n"
         "    {\"action\": \"type\", \"text\": \"hello world\"}\n"
         "  ]\n}\n"
         "Use the script text below as the instruction guide.\n"
